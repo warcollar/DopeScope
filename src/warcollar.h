@@ -10,25 +10,7 @@ struct node {
   struct node* next;
 };
 
-void ICACHE_FLASH_ATTR setupPins(void);
-
 static void ICACHE_FLASH_ATTR sortAPs(void);
-
-
-/*
-The pinout for the IO connector is
-
-O SDA     GPIO2     \
-O SCL     GPIO0     / used by the OLED display
-O MOSI    GPIO13
-O MISO    GPIO12
-O CLK     GPIO14
-O         GPIO4   [solder mask says G5 !!!]
-O         3.3v
-O         Ground
-
-*/
-void ICACHE_FLASH_ATTR setupPins(void);
 
 static const uint8_t font6x8[] = {
     0x06,                               // width

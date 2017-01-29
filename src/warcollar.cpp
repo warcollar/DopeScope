@@ -8,12 +8,7 @@
 #include "warcollar.h"
 
 #define SCAN_PERIOD 5000
-#define SWITCH_PERIOD 250
-
 long lastScanMillis;
-long lastSwitchMillis;
-
-uint8_t io4, io12, io13, io14;
 
 using std::string;
 
@@ -24,37 +19,24 @@ void ICACHE_FLASH_ATTR setup()
   Wire.begin(2, 0);       // initialize the i2c library
   oled.init();            // initialize the oled display library
 
-  // initialize the IO pins
-  setupPins();
-
   delay(200);             // short delay to let init settle down
 
   WiFi.mode(WIFI_STA);    // Set WiFi to station mode
 
   oled.clearDisplay();    // remove random junk on the display
+
   oled.setFont(font6x8);  // set to our custom 6x8 font with AP icons
 
   // Draw the warcollar logo and the version information
   oled.drawBitmap(wclogo, 1024);
   oled.setTextXY(7, 0);
-  oled.putString("ph1x3r         [r2d2]");
-  //             "012345678901234567890"  -  max string with 6x8 font
+  oled.putString("            v2.0.0.a");
+  //             "12345678901234567890"  -  max string with 6x8 font
 
   // send a status message to top line of the display
   oled.setTextXY(0, 0);
-  oled.putString("[-=Initializing=----]");
+  oled.putString("[--=Initializing=--]");
   delay(500);
-}
-
-void ICACHE_FLASH_ATTR setupPins(){
-  // set the pins as active low
-  // this means that for people with nothing connected, things still
-  // work as expected.
-  pinMode(4, INPUT_PULLUP);
-  pinMode(12, INPUT_PULLUP);
-  pinMode(13, INPUT_PULLUP);
-  pinMode(14, INPUT_PULLUP);
-
 }
 
 // do not use the ICACHE_FLASH_ATTR on the following functions since the code
@@ -144,22 +126,13 @@ void printList(struct node** head_ref)
     if ( loopcount < 7 )
     {
       char ap_str[21];
-
-      // sample code to adjust the output when a button is pressed
-      if ( io4 == LOW )
-      {
-        // print the manufacturers MAC address while the button is pressed
-        unsigned int nchr = os_sprintf(ap_str, "%s %-12s", WiFi.BSSIDstr(ap).substring(0,8).c_str(), WiFi.SSID(ap).substring(0,11).c_str() );
-      } else {
-        // normal output with no button pressed
-        unsigned int nchr = os_sprintf(ap_str, "%d %-2d %s %-12s",WiFi.RSSI(ap), WiFi.channel(ap), enc.c_str(), WiFi.SSID(ap).substring(0,11).c_str());
-     }
+      unsigned int nchr = os_sprintf(ap_str, "%d %-2d %s %-12s",WiFi.RSSI(ap), WiFi.channel(ap), enc.c_str(), WiFi.SSID(ap).substring(0,11).c_str());
       oled.setTextXY(loopcount+1, 0);
       oled.putString(ap_str);
     }
 
     // print all the data to the serial console
-    Serial.printf("%d %-2d %s %-20s %s\n",WiFi.RSSI(ap), WiFi.channel(ap), ap_txt.c_str(), WiFi.SSID(ap).c_str(), WiFi.BSSIDstr(ap).c_str());
+    Serial.printf("%d %-2d %s %s\n",WiFi.RSSI(ap), WiFi.channel(ap), ap_txt.c_str(), WiFi.SSID(ap).c_str());
 
     // recover the memory allocated for the current record
     free(current);
@@ -173,8 +146,8 @@ void printList(struct node** head_ref)
   while (loopcount < 7)
   {
     oled.setTextXY(loopcount+1, 0);
-    oled.putString("                     ");
-    //             "012345678901234567890"  -  max string with 6x8 font
+    oled.putString("                    ");
+    //             "12345678901234567890"  -  max string with 6x8 font
     loopcount += 1;
   }
 }
@@ -184,22 +157,6 @@ void loop() {
   // record the entry time into the loop
   long currentMillis = millis();
 
-  // check if any inputs are pulled low - default config is to pull high
-  if (currentMillis - lastSwitchMillis > SWITCH_PERIOD)
-  {
-
-    // read the pins into global variables
-    io4 = digitalRead(4);
-    io12 = digitalRead(12);
-    io13 = digitalRead(13);
-    io14 = digitalRead(14);
-
-    //Serial.printf("Pin 4 [%d] Pin 12 [%d] Pin 13 [%d] Pin 14 [%d]\n", io4, io12, io13, io14);
-
-    // re-start the switch monitoring period
-    lastSwitchMillis = currentMillis;
-  }
-
   // trigger Wi-Fi network scan if scan period exceeded
   if (currentMillis - lastScanMillis > SCAN_PERIOD)
   {
@@ -208,8 +165,8 @@ void loop() {
     WiFi.scanNetworks(true, true);
     Serial.print("\nScan starting ... ");
     oled.setTextXY(0, 0);
-    oled.putString("[-=Scanning=-------] ");
-    //             "012345678901234567890"  -  max string with 6x8 font
+    oled.putString("[----=Scanning=----]");
+    //             "12345678901234567890"  -  max string with 6x8 font
 
     //record the time the scan was started
     lastScanMillis = currentMillis;
@@ -224,7 +181,7 @@ void loop() {
     // tell the outside world how many aps were found
     Serial.printf("Found %d APs\n", aps);
     char t_str[21];
-    unsigned int nchr = os_sprintf(t_str, "[-=Found %-2d AP's=--] ", aps);
+    unsigned int nchr = os_sprintf(t_str, "[--=Found %-2d AP's=-]", aps);
     //                                    "12345678901234567890"  -  max string with 6x8 font
     oled.setTextXY(0, 0);
     oled.putString(t_str);
